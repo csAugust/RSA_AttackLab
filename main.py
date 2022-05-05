@@ -32,6 +32,9 @@ def modinv(a, m):
 
 
 class Encrypter:
+    """
+    加密器类
+    """
     def __init__(self):
         self.p = None
         self.q = None
@@ -41,6 +44,14 @@ class Encrypter:
         self.d = None
 
     def set(self, *, p: int = None, q: int = None, e: int = None):
+        """
+        设置加密器参数
+
+        :param p:
+        :param q:
+        :param e:
+        :return: None
+        """
         if p is not None:
             if libnum.prime_test(p):
                 self.p = p
@@ -60,6 +71,11 @@ class Encrypter:
             self.d = libnum.invmod(self.e, self.r)  # 求得模反元素作为私钥
 
     def clear(self):
+        """
+        重置加密器
+
+        :return: None
+        """
         self.p = None
         self.q = None
         self.N = None
@@ -68,6 +84,11 @@ class Encrypter:
         self.d = None
 
     def init(self):
+        """
+        进行初始化N，r的计算
+
+        :return: None
+        """
         if self.p is None:
             raise ValueError("p 尚未被初始化！")
         if self.q is None:
@@ -76,6 +97,12 @@ class Encrypter:
         self.r = (self.p - 1) * (self.q - 1)
 
     def encrypt(self, message: int) -> int:
+        """
+        加密明文
+
+        :param message: 待加密的明文
+        :return: 加密后的密文
+        """
         if message >= self.N:
             raise ValueError("Message 超过了 N！")
         res = pow(message, self.e, self.N)
@@ -83,6 +110,9 @@ class Encrypter:
 
 
 class Decrypter:
+    """
+    解密器
+    """
     def __init__(self):
         self.p = None
         self.q = None
@@ -92,6 +122,14 @@ class Decrypter:
         self.d = None
 
     def set(self, *, N: int = None, e: int = None, d: int = None):
+        """
+        设置解密器参数
+
+        :param N:
+        :param e:
+        :param d:
+        :return:
+        """
         if N is not None:
             self.N = N
         if e is not None:
@@ -100,6 +138,11 @@ class Decrypter:
             self.d = d
 
     def clear(self):
+        """
+        重置解密器
+
+        :return:
+        """
         self.p = None
         self.q = None
         self.N = None
@@ -108,37 +151,15 @@ class Decrypter:
         self.d = None
 
     def decrypt(self, c: int) -> int:
+        """
+        解密密文
+
+        :param c: 待解密的密文
+        :return: 解密后的明文
+        """
         if self.d is None:
             raise ValueError("d 尚未被初始化！")
         res = pow(c, self.d, self.N)
-        return res
-
-
-
-class Decoder():
-    def __init__(self, N, e):
-        """
-        :param N: 公钥之一
-        :param e: 公钥之一
-        """
-        self.N = N
-        self.r = None
-        self.e = e
-        self.d = None
-
-    def set_private_key(self, d):
-        self.d = d
-
-    def decode(self, message):
-        """
-        使用私钥进行解密。
-
-        :param message: 需要解密的密文，以数字形式表示
-        :return: 明文，以数字形式表示
-        """
-        if self.d is None:
-            raise Exception("not have private key d !")
-        res = pow(message, self.d, self.N)
         return res
 
 
