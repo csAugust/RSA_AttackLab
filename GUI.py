@@ -1,3 +1,4 @@
+from random import randint
 import tkinter as tk
 import gmpy2
 import libnum
@@ -16,6 +17,15 @@ class EncryptFrame:
         self.frame = None
         self.init_frame()
         self.encrypter = main.Encrypter()
+        self.c = None
+
+    def save(self):
+        path = './encrypt_data.txt'
+        with open(path, 'w') as file:
+            file.writelines(f'N {self.encrypter.N}\n')
+            file.writelines(f'e {self.encrypter.e}\n')
+            file.writelines(f'd {self.encrypter.d}\n')
+            file.writelines(f'c {self.c}\n')
 
     def init_frame(self):
         """
@@ -51,11 +61,16 @@ class EncryptFrame:
                                              onvalue=1, offvalue=0)
         self.check_string_m.place(relx=0.01, rely=0.55)
 
+        self.check_padding_var = tk.IntVar()
+        self.check_padding = tk.Checkbutton(self.frame, text='启用随机填充', variable=self.check_padding_var,
+                                             onvalue=1, offvalue=0, command=self.use_padding)
+        self.check_padding.place(relx=0.01, rely=0.6)
+
         self.label_hint = tk.Label(self.frame, text='')
-        self.label_hint.place(relx=0.05, rely=0.6)
+        self.label_hint.place(relx=0.05, rely=0.7)
 
         self.label_encrypt_done = tk.Label(self.frame, text='', anchor='w', justify='left')
-        self.label_encrypt_done.place(relx=0.05, rely=0.7)
+        self.label_encrypt_done.place(relx=0.05, rely=0.8)
 
         self.frame.pack()
 
@@ -154,6 +169,18 @@ class EncryptFrame:
         """
         提交m
         """
+        def padding(m):
+            print(bin(m))
+            m_len = len(bin(m))
+            PADDING_BITS = self.scale_padding_bits.get()
+            if PADDING_BITS - m_len <= 64:
+                return m
+            FLAG_BITS = 64
+            flag = randint(1, 1 << FLAG_BITS)
+            m = m | (flag << (PADDING_BITS - FLAG_BITS))
+            print(bin(m))
+            return m
+
         res = None
         m = self.entry_m.get()
         if self.check_string_m_var.get() == 1:
@@ -165,8 +192,11 @@ class EncryptFrame:
         else:
             m = libnum.s2n(m)
         try:
+            if self.check_padding_var.get() == 1:
+                m = padding(m)
             res = self.encrypter.encrypt(m)
-            self.label_encrypt_done.config(text=f'加密结果为{res}')
+            self.label_encrypt_done.config(text=f'加密结果为 {res}')
+            self.c = res
         except ValueError as e:
             self.label_hint.config(text=f'发生错误 {e}')
 
@@ -187,9 +217,31 @@ class EncryptFrame:
             if libnum.gcd(self.encrypter.r, e) != 1:
                 e = gmpy2.next_prime(e)
             self.encrypter.set(e=e)
-            self.label_auto.config(text=f'选取结果如下:\np: {p}\nq: {q}\ne: {e}\nd: {self.encrypter.d}')
+            self.label_auto.config(text=f'选取结果如下:\np: {p}\nq: {q}\ne: {e}\nd: {self.encrypter.d}\nN: {self.encrypter.N}')
         except ValueError as err:
             self.label_hint.config(text=f'发生错误 {err}')
+
+    def use_padding(self):
+        """
+        启用随机填充后更新界面
+
+        :return: None
+        """
+        if self.check_padding_var.get() == 1:
+            self.label_hint.place(relx=0.05, rely=0.85)
+            self.label_encrypt_done.place(relx=0.05, rely=0.9)
+
+            self.scale_padding_bits_var = tk.IntVar()
+            self.scale_padding_bits_var.set(32)
+            self.scale_padding_bits = tk.Scale(self.frame, orient=tk.HORIZONTAL, length=140, from_=128, to=512,
+                                             label='选择将明文填充到的位数', tickinterval=128, resolution=8, variable=self.scale_padding_bits_var)
+            self.scale_padding_bits.place(relx=0.05, rely=0.65)
+        else:
+            self.label_hint.place(relx=0.05, rely=0.7)
+            self.label_encrypt_done.place(relx=0.05, rely=0.8)
+            self.scale_padding_bits.destroy()
+
+
 
 class DecryptFrame:
     """
@@ -200,6 +252,15 @@ class DecryptFrame:
         self.frame = None
         self.init_frame()
         self.decrypter = main.Decrypter()
+        self.m = None
+
+    def save(self):
+        path = './decrypt_data.txt'
+        with open(path, 'w') as file:
+            file.writelines(f'N {self.decrypter.N}\n')
+            file.writelines(f'e {self.decrypter.e}\n')
+            file.writelines(f'd {self.decrypter.d}\n')
+            file.writelines(f'm {self.m}\n')
 
     def init_frame(self):
         """
@@ -337,6 +398,7 @@ class DecryptFrame:
             if self.check_string_c_var.get() == 1:
                 res = libnum.n2s(res)
             self.label_decrypt_done.config(text=f'解密结果为{res}')
+            self.m = res
         except ValueError as e:
             self.label_hint.config(text=f'发生错误 {e}')
 
@@ -358,6 +420,7 @@ class MainPanel:
     def __init__(self):
         self.frame_encrypt = None
         self.frame_decrypt = None
+        self.mode = 1
 
     def start(self):
         """
@@ -370,6 +433,7 @@ class MainPanel:
         self.menu_main = tk.Menu(self.root)
         self.menu1 = tk.Menu(self.menu_main, tearoff=False)  # 菜单分组 menuFile
         self.menu_main.add_cascade(label="选项", menu=self.menu1)
+        self.menu1.add_command(label="保存当前结果", command=self.save)
         self.menu1.add_command(label="切换到加密器", command=self.change_to_encrypt)
         self.menu1.add_command(label="切换到解密器", command=self.change_to_decrypt)
         self.menu1.add_command(label="退出", command=self.root.destroy)
@@ -379,11 +443,18 @@ class MainPanel:
 
         self.root.mainloop()
 
+    def save(self):
+        if self.mode == 1:
+            self.frame_encrypt.save()
+        if self.mode == 2:
+            self.frame_decrypt.save()
+
     def change_to_encrypt(self):
         """
         切换到加密界面
         """
         print("To encrypt")
+        self.mode = 1
         if self.frame_decrypt is not None:
             self.frame_decrypt.frame.destroy()
         if self.frame_encrypt is None:
@@ -396,6 +467,7 @@ class MainPanel:
         切换到解密界面
         """
         print("To decrypt")
+        self.mode = 2
         if self.frame_encrypt is not None:
             self.frame_encrypt.frame.destroy()
         if self.frame_decrypt is None:
