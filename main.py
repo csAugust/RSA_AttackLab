@@ -40,7 +40,7 @@ class Encrypter:
         self.e = None
         self.d = None
 
-    def set(self, *, p:int=None, q:int=None, e:int=None):
+    def set(self, *, p: int = None, q: int = None, e: int = None):
         if p is not None:
             if libnum.prime_test(p):
                 self.p = p
@@ -75,60 +75,44 @@ class Encrypter:
         self.N = self.p * self.q
         self.r = (self.p - 1) * (self.q - 1)
 
-    def encrypt(self, message:int) -> int:
+    def encrypt(self, message: int) -> int:
         if message >= self.N:
             raise ValueError("Message 超过了 N！")
         res = pow(message, self.e, self.N)
         return res
 
 
-class Encoder():
-    def __init__(self, p, q, do_prime_check=True):
-        """
-        :param p: 素数p
-        :param q: 素数q
-        :param do_prime_check: 是否对p、q进行素数检查，若其中之一不为素数则抛出异常
-        """
-        if do_prime_check:
-            p_checker = FactorDB(p)
-            p_checker.connect()
-            if not p_checker.is_prime():
-                raise Exception("p should be prime")
-            q_checker = FactorDB(q)
-            q_checker.connect()
-            if not q_checker.is_prime():
-                raise Exception("q should be prime")
-        self.N = p * q
-        self.r = (p - 1) * (q - 1)
+class Decrypter:
+    def __init__(self):
+        self.p = None
+        self.q = None
+        self.N = None
+        self.r = None
         self.e = None
         self.d = None
-        print(f'Init done.\nN: {self.N}\nr: {self.r}')
 
-    def get_private_key(self, e):
-        """
-        根据公钥计算私钥。
-
-        :param e: 选择的公钥，应小于r且与r互素
-        :return: 私钥(N, d)
-        """
-        if libnum.gcd(self.r, e) != 1:
-            raise Exception("e should be prime to r")
-        else:
+    def set(self, *, N: int = None, e: int = None, d: int = None):
+        if N is not None:
+            self.N = N
+        if e is not None:
             self.e = e
-            self.d = libnum.invmod(self.e, self.r)  # 求得模反元素作为私钥
-        return (self.N, self.d)
+        if d is not None:
+            self.d = d
 
-    def encode(self, message):
-        """
-        对message进行加密。
+    def clear(self):
+        self.p = None
+        self.q = None
+        self.N = None
+        self.r = None
+        self.e = None
+        self.d = None
 
-        :param message: 需要加密的明文message，以数字形式表示；其数值应小于N.
-        :return: 加密后的密文
-        """
-        if message >= self.N:
-            raise Exception("Message should be less than N")
-        res = pow(message, self.e, self.N)
+    def decrypt(self, c: int) -> int:
+        if self.d is None:
+            raise ValueError("d 尚未被初始化！")
+        res = pow(c, self.d, self.N)
         return res
+
 
 
 class Decoder():

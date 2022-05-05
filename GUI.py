@@ -24,7 +24,7 @@ class EncryptFrame:
         self.check_show_vars = tk.Checkbutton(self.frame, text='显示当前加密器属性', variable=self.check_show_vars_var,
                                               onvalue=1, offvalue=0, command=self.show_vars)
         self.check_show_vars.place(relx=0.5, rely=0.01)
-        self.label_show_vars = tk.Label(self.frame, text='')
+        self.label_show_vars = tk.Label(self.frame, text='', anchor='w', justify='left')
         self.label_show_vars.place(relx=0.5, rely=0.05)
 
         self.init_encrypt_byhand()
@@ -42,7 +42,7 @@ class EncryptFrame:
         self.label_hint = tk.Label(self.frame, text='')
         self.label_hint.place(relx=0.05, rely=0.5)
 
-        self.label_encrypt_done = tk.Label(self.frame, text='')
+        self.label_encrypt_done = tk.Label(self.frame, text='', anchor='w', justify='left')
         self.label_encrypt_done.place(relx=0.05, rely=0.6)
 
         self.frame.pack()
@@ -73,11 +73,17 @@ class EncryptFrame:
         self.button_confirm_e.place(relx=0.35, rely=0.3)
 
     def init_encrypt_auto(self):
-        self.button_auto = tk.Button(self.frame, text='自动生成密钥', command=self.auto_confirm)
-        self.button_auto.place(relx=0.2, rely=0.01)
+        self.scale_prime_bits_var = tk.IntVar()
+        self.scale_prime_bits_var.set(256)
+        self.scale_prime_bits = tk.Scale(self.root, orient=tk.HORIZONTAL, length=300, from_=8, to=1024,
+                                         label='选择自动生成N的位数', tickinterval=128, resolution=8, variable=self.scale_prime_bits_var)
+        self.scale_prime_bits.place(relx=0.5, rely=0.2)
 
-        self.label_auto = tk.Label(self.frame, text='')
-        self.label_auto.place(relx=0.5, rely=0.2)
+        self.button_auto = tk.Button(self.frame, text='自动生成并提交p、q、e', command=self.auto_confirm)
+        self.button_auto.place(relx=0.5, rely=0.4)
+
+        self.label_auto = tk.Label(self.frame, text='', anchor='w', justify='left')
+        self.label_auto.place(relx=0.5, rely=0.45)
 
     def show_vars(self):
         self.label_show_vars.config(text=f'N:{self.encrypter.N}\ne:{self.encrypter.e}\nd:{self.encrypter.d}')
@@ -126,7 +132,7 @@ class EncryptFrame:
             self.label_hint.config(text=f'发生错误 {e}')
 
     def auto_confirm(self):
-        PRIME_BITS = 8
+        PRIME_BITS = self.scale_prime_bits_var.get() // 2
         E = 65537
         p = libnum.generate_prime(PRIME_BITS)
         q = libnum.generate_prime(PRIME_BITS)
@@ -137,7 +143,7 @@ class EncryptFrame:
             if libnum.gcd(self.encrypter.r, e) != 1:
                 e = gmpy2.next_prime(e)
             self.encrypter.set(e=e)
-            self.label_auto.config(text=f'选取的p为 {p}\nq为 {q}\ne为 {e}\nd为{self.encrypter.d}')
+            self.label_auto.config(text=f'选取结果如下:\np: {p}\nq: {q}\ne: {e}\nd: {self.encrypter.d}')
         except ValueError as err:
             self.label_hint.config(text=f'发生错误 {err}')
 
@@ -146,12 +152,118 @@ class DecryptFrame:
         self.root = root
         self.frame = None
         self.init_frame()
+        self.decrypter = main.Decrypter()
 
     def init_frame(self):
         self.frame = tk.Frame(self.root, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, relief='groove')
-        self.label_en = tk.Label(self.frame, text='加密')
-        self.label_en.place(relx=0.5, rely=0.5)
+
+        self.label_encrypt = tk.Label(self.frame, text='解密器')
+        self.label_encrypt.place(relx=0.01, rely=0.01)
+
+        self.check_show_vars_var = tk.IntVar()
+        self.check_show_vars = tk.Checkbutton(self.frame, text='显示当前解密器属性', variable=self.check_show_vars_var,
+                                              onvalue=1, offvalue=0, command=self.show_vars)
+        self.check_show_vars.place(relx=0.5, rely=0.01)
+        self.label_show_vars = tk.Label(self.frame, text='')
+        self.label_show_vars.place(relx=0.5, rely=0.05)
+
+        self.init_decrypt_byhand()
+        self.init_decrypt_auto()
+
+        self.label_c = tk.Label(self.frame, text='请输入密文')
+        self.label_c.place(relx=0, rely=0.4)
+
+        self.entry_c = tk.Entry(self.frame)
+        self.entry_c.place(relx=0.1, rely=0.4, relwidth=0.2)
+
+        self.button_confirm_c = tk.Button(self.frame, text='确认', command=self.confirm_c)
+        self.button_confirm_c.place(relx=0.35, rely=0.4)
+
+        self.label_hint = tk.Label(self.frame, text='')
+        self.label_hint.place(relx=0.05, rely=0.5)
+
+        self.label_decrypt_done = tk.Label(self.frame, text='')
+        self.label_decrypt_done.place(relx=0.05, rely=0.6)
+
         self.frame.pack()
+
+    def init_decrypt_byhand(self):
+        self.label_N = tk.Label(self.frame, text='请输入N')
+        self.label_N.place(relx=0.01, rely=0.1)
+
+        self.entry_N = tk.Entry(self.frame)
+        self.entry_N.place(relx=0.1, rely=0.1, relwidth=0.2)
+
+        self.label_e = tk.Label(self.frame, text='请输入e')
+        self.label_e.place(relx=0.01, rely=0.2)
+
+        self.entry_e = tk.Entry(self.frame)
+        self.entry_e.place(relx=0.1, rely=0.2, relwidth=0.2)
+
+        self.button_confirm_Ne = tk.Button(self.frame, text='确认', command=self.confirm_Ne)
+        self.button_confirm_Ne.place(relx=0.35, rely=0.15)
+
+        self.label_d = tk.Label(self.frame, text='请输入d')
+        self.label_d.place(relx=0.01, rely=0.3)
+
+        self.entry_d = tk.Entry(self.frame)
+        self.entry_d.place(relx=0.1, rely=0.3, relwidth=0.2)
+
+        self.button_confirm_d = tk.Button(self.frame, text='确认', command=self.confirm_d)
+        self.button_confirm_d.place(relx=0.35, rely=0.3)
+
+    def init_decrypt_auto(self):
+        self.button_auto = tk.Button(self.frame, text='自动生成密钥')
+        self.button_auto.place(relx=0.2, rely=0.01)
+
+        self.label_auto = tk.Label(self.frame, text='')
+        self.label_auto.place(relx=0.5, rely=0.2)
+
+    def show_vars(self):
+        self.label_show_vars.config(text=f'N:{self.decrypter.N}\ne:{self.decrypter.e}\nd:{self.decrypter.d}')
+
+    def confirm_Ne(self):
+        N = self.entry_N.get()
+        e = self.entry_e.get()
+        try:
+            N = int(N)
+            e = int(e)
+        except ValueError:
+            self.label_hint.config(text='请输入整数！')
+            return
+        try:
+            self.decrypter.set(N=N, e=e)
+            self.label_hint.config(text=f'选取的N为 {N}，e为 {e}')
+        except ValueError as err:
+            self.label_hint.config(text=f'发生错误 {err}')
+
+    def confirm_d(self):
+        d = self.entry_d.get()
+        try:
+            d = int(d)
+        except ValueError:
+            self.label_hint.config(text='请输入整数！')
+            return
+        try:
+            self.decrypter.set(d=d)
+            self.label_hint.config(text=f'选取的d为 {d}')
+        except ValueError as err:
+            self.label_hint.config(text=f'发生错误 {err}')
+
+    def confirm_c(self):
+        res = None
+        c = self.entry_c.get()
+        try:
+            c = int(c)
+        except ValueError:
+            self.label_hint.config(text='请输入整数！')
+            return
+        try:
+            res = self.decrypter.decrypt(c)
+            self.label_decrypt_done.config(text=f'解密结果为{res}')
+        except ValueError as e:
+            self.label_hint.config(text=f'发生错误 {e}')
+
 
 
 class MainPanel:
