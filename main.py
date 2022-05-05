@@ -162,6 +162,26 @@ class Decrypter:
         res = pow(c, self.d, self.N)
         return res
 
+    def DatabaseAttack(self):
+        """
+        在factorDB数据库中查询N能否被直接分解。
+        解出data2 data6 data19
+        :param c:
+        :return: 明文m（数字形式）
+        """
+        if self.N is None:
+            raise ValueError("N 尚未被初始化！")
+        if self.e is None:
+            raise ValueError("e 尚未被初始化！")
+        factor = FactorDB(self.N)
+        factor.connect()
+        res = factor.get_factor_list()
+        if (res is None) or (len(res) > 2) or factor.get_status() == 'C':
+            raise RuntimeError(f'数据库分解失败 {self.N}')
+        p, q = res[0], res[1]
+        r = (p - 1) * (q - 1)
+        self.d = libnum.invmod(self.e, r)
+
 
 def DatabaseAttack(N, e, c):
     """

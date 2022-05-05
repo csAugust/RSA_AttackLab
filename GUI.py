@@ -273,11 +273,11 @@ class DecryptFrame:
         self.button_confirm_d.place(relx=0.35, rely=0.3)
 
     def init_decrypt_auto(self):
-        self.button_auto = tk.Button(self.frame, text='自动生成密钥')
-        self.button_auto.place(relx=0.2, rely=0.01)
+        self.button_database = tk.Button(self.frame, text='数据库分解N', command=self.do_DatabaseAttack)
+        self.button_database.place(relx=0.5, rely=0.4)
 
         self.label_auto = tk.Label(self.frame, text='')
-        self.label_auto.place(relx=0.5, rely=0.2)
+        self.label_auto.place(relx=0.5, rely=0.5)
 
     def show_vars(self):
         """
@@ -340,14 +340,29 @@ class DecryptFrame:
         except ValueError as e:
             self.label_hint.config(text=f'发生错误 {e}')
 
+    def do_DatabaseAttack(self):
+        try:
+            self.decrypter.DatabaseAttack()
+            self.label_auto.config(text=f'数据库分解成功\nd:{self.decrypter.d}')
+        except (ValueError, RuntimeError) as e:
+            self.label_hint.config(text=f'发生错误 {e}')
+
+
+
 
 
 class MainPanel:
+    """
+    主面板
+    """
     def __init__(self):
         self.frame_encrypt = None
         self.frame_decrypt = None
 
     def start(self):
+        """
+        启动
+        """
         self.root = tk.Tk()
         self.root.geometry(str(WINDOW_WIDTH)+'x'+str(WINDOW_HEIGHT))
         self.root.title("RSA工具")
@@ -365,6 +380,9 @@ class MainPanel:
         self.root.mainloop()
 
     def change_to_encrypt(self):
+        """
+        切换到加密界面
+        """
         print("To encrypt")
         if self.frame_decrypt is not None:
             self.frame_decrypt.frame.destroy()
@@ -374,6 +392,9 @@ class MainPanel:
             self.frame_encrypt.init_frame()
 
     def change_to_decrypt(self):
+        """
+        切换到解密界面
+        """
         print("To decrypt")
         if self.frame_encrypt is not None:
             self.frame_encrypt.frame.destroy()
@@ -381,7 +402,6 @@ class MainPanel:
             self.frame_decrypt = DecryptFrame(self.root)
         else:
             self.frame_decrypt.init_frame()
-
 
 
 if __name__ == '__main__':
