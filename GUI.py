@@ -15,67 +15,67 @@ class MainPanel:
         self.root.geometry('600x480')
         self.root.title("RSA工具")
 
-        self.label_hint = tk.Label(self.root, text='')
-        self.label_hint.grid(row=0, column=1, rowspan=2, columnspan=3)
-
         self.label_encrypt = tk.Label(self.root, text='加密')
-        self.label_encrypt.grid(row=0, column=0, rowspan=2)
+        self.label_encrypt.place(relx=0.01, rely=0.01)
 
         self.check_show_vars_var = tk.IntVar()
         self.check_show_vars = tk.Checkbutton(self.root, text='显示当前加密器属性', variable=self.check_show_vars_var,
                                               onvalue=1, offvalue=0, command=self.show_vars)
-        self.check_show_vars.grid(row=0, column=5)
+        self.check_show_vars.place(relx=0.5, rely=0.01)
         self.label_show_vars = tk.Label(self.root, text='')
-        self.label_show_vars.grid(row=4, column=5)
+        self.label_show_vars.place(relx=0.5, rely=0.05)
 
         self.init_encrypt_byhand()
         self.init_encrypt_auto()
 
-        self.label_m = tk.Label(self.root, text='请输入密文')
-        self.label_m.grid(row=7, column=0)
+        self.label_m = tk.Label(self.root, text='请输入明文')
+        self.label_m.place(relx=0, rely=0.4)
 
         self.entry_m = tk.Entry(self.root)
-        self.entry_m.grid(row=7, column=1, columnspan=2)
+        self.entry_m.place(relx=0.1, rely=0.4, relwidth=0.2)
 
         self.button_confirm_m = tk.Button(self.root, text='确认', command=self.confirm_m)
-        self.button_confirm_m.grid(row=7, column=3)
+        self.button_confirm_m.place(relx=0.35, rely=0.4)
+
+        self.label_hint = tk.Label(self.root, text='')
+        self.label_hint.place(relx=0.05, rely=0.5)
 
         self.label_encrypt_done = tk.Label(self.root, text='')
-        self.label_encrypt_done.grid(row=8, column=0, columnspan=10)
+        self.label_encrypt_done.place(relx=0.05, rely=0.6)
 
         self.root.mainloop()
 
     def init_encrypt_byhand(self):
         self.label_p = tk.Label(self.root, text='请输入p')
-        self.label_p.grid(row=2, column=0)
+        self.label_p.place(relx=0.01, rely=0.1)
 
         self.entry_p = tk.Entry(self.root)
-        self.entry_p.grid(row=2, column=1, columnspan=2)
+        self.entry_p.place(relx=0.1, rely=0.1, relwidth=0.2)
 
         self.label_q = tk.Label(self.root, text='请输入q')
-        self.label_q.grid(row=3, column=0)
+        self.label_q.place(relx=0.01, rely=0.2)
 
         self.entry_q = tk.Entry(self.root)
-        self.entry_q.grid(row=3, column=1, columnspan=2)
+        self.entry_q.place(relx=0.1, rely=0.2, relwidth=0.2)
 
         self.button_confirm_pq = tk.Button(self.root, text='确认', command=self.confirm_pq)
-        self.button_confirm_pq.grid(row=2, column=3, rowspan=2)
+        self.button_confirm_pq.place(relx=0.35, rely=0.15)
 
         self.label_e = tk.Label(self.root, text='请输入e')
-        self.label_e.grid(row=5, column=0)
+        self.label_e.place(relx=0.01, rely=0.3)
 
         self.entry_e = tk.Entry(self.root)
-        self.entry_e.grid(row=5, column=1, columnspan=2)
+        self.entry_e.place(relx=0.1, rely=0.3, relwidth=0.2)
 
         self.button_confirm_e = tk.Button(self.root, text='确认', command=self.confirm_e)
-        self.button_confirm_e.grid(row=5, column=3)
+        self.button_confirm_e.place(relx=0.35, rely=0.3)
 
     def init_encrypt_auto(self):
         self.button_auto = tk.Button(self.root, text='自动生成密钥', command=self.auto_confirm)
-        self.button_auto.grid(row=1, column=6, rowspan=2, columnspan=2)
+        self.button_auto.place(relx=0.2, rely=0.01)
 
         self.label_auto = tk.Label(self.root, text='')
-        self.label_auto.grid(row=3, column=6, columnspan=3)
+        self.label_auto.place(relx=0.5, rely=0.2)
 
     def show_vars(self):
         self.label_show_vars.config(text=f'N:{self.encrypter.N}\ne:{self.encrypter.e}\nd:{self.encrypter.d}')
@@ -135,7 +135,7 @@ class MainPanel:
             if libnum.gcd(self.encrypter.r, e) != 1:
                 e = gmpy2.next_prime(e)
             self.encrypter.set(e=e)
-            self.label_auto.config(text=f'选取的p为 {p}\nq为 {q}\ne为 {e}\nd为{d}')
+            self.label_auto.config(text=f'选取的p为 {p}\nq为 {q}\ne为 {e}\nd为{self.encrypter.d}')
         except ValueError as err:
             self.label_hint.config(text=f'发生错误 {err}')
 
