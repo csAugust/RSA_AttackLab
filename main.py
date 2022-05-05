@@ -5,6 +5,7 @@ import gmpy2
 import threading
 import time
 
+
 def extendGCD(a, b):
     """
     扩展欧几里得算法;
@@ -17,6 +18,7 @@ def extendGCD(a, b):
         g, y, x = extendGCD(b % a, a)
         return (g, x - (b // a) * y, y)
 
+
 def modinv(a, m):
     """
     求a对m的模逆元素;
@@ -27,6 +29,58 @@ def modinv(a, m):
         raise Exception('modular inverse does not exist')
     else:
         return x % m
+
+
+class Encrypter:
+    def __init__(self):
+        self.p = None
+        self.q = None
+        self.N = None
+        self.r = None
+        self.e = None
+        self.d = None
+
+    def set(self, *, p:int=None, q:int=None, e:int=None):
+        if p is not None:
+            if libnum.prime_test(p):
+                self.p = p
+            else:
+                raise ValueError("p 不是素数！")
+        if q is not None:
+            if libnum.prime_test(q):
+                self.q = q
+            else:
+                raise ValueError("q 不是素数！")
+        if e is not None:
+            if self.r is None:
+                raise ValueError("r 尚未被初始化！")
+            if libnum.gcd(self.r, e) != 1:
+                raise ValueError("e 不与 r 互素！")
+            self.e = e
+            self.d = libnum.invmod(self.e, self.r)  # 求得模反元素作为私钥
+
+    def clear(self):
+        self.p = None
+        self.q = None
+        self.N = None
+        self.r = None
+        self.e = None
+        self.d = None
+
+    def init(self):
+        if self.p is None:
+            raise ValueError("p 尚未被初始化！")
+        if self.q is None:
+            raise ValueError("q 尚未被初始化！")
+        self.N = self.p * self.q
+        self.r = (self.p - 1) * (self.q - 1)
+
+    def encrypt(self, message:int) -> int:
+        if message >= self.N:
+            raise ValueError("Message 超过了 N！")
+        res = pow(message, self.e, self.N)
+        return res
+
 
 class Encoder():
     def __init__(self, p, q, do_prime_check=True):
@@ -61,7 +115,7 @@ class Encoder():
             raise Exception("e should be prime to r")
         else:
             self.e = e
-            self.d = libnum.invmod(self.e, self.r) # 求得模反元素作为私钥
+            self.d = libnum.invmod(self.e, self.r)  # 求得模反元素作为私钥
         return (self.N, self.d)
 
     def encode(self, message):
@@ -75,6 +129,7 @@ class Encoder():
             raise Exception("Message should be less than N")
         res = pow(message, self.e, self.N)
         return res
+
 
 class Decoder():
     def __init__(self, N, e):
@@ -102,6 +157,7 @@ class Decoder():
         res = pow(message, self.d, self.N)
         return res
 
+
 def DatabaseAttack(N, e, c):
     """
     在factorDB数据库中查询N能否被直接分解。
@@ -123,6 +179,7 @@ def DatabaseAttack(N, e, c):
     m = pow(c, d, N)
     return m
 
+
 def LowExpAttack(N, e, c, max_try, thread_num, start_at=0):
     """
     低加密指数爆破攻击。
@@ -135,6 +192,7 @@ def LowExpAttack(N, e, c, max_try, thread_num, start_at=0):
     :param start_at: k的起始值
     :return: 明文m（数字形式） 或 None（攻击失败）
     """
+
     def calc(N, e, c, k_lower, k_upper, result, thread_idx):
         k = k_lower
         while k < k_upper:
@@ -149,7 +207,7 @@ def LowExpAttack(N, e, c, max_try, thread_num, start_at=0):
     # thread_num threads, which thread i calculate [start_at+max_try*i, start_at+max_try*(i+1)]
     threads = [threading.Thread(target=calc,
                                 args=(
-                                N, e, c, start_at + max_try * i, start_at + max_try * (i + 1), result, i))
+                                    N, e, c, start_at + max_try * i, start_at + max_try * (i + 1), result, i))
                for i in range(0, thread_num)]
     for thread in threads:
         thread.start()
@@ -160,6 +218,7 @@ def LowExpAttack(N, e, c, max_try, thread_num, start_at=0):
         return None
     else:
         return result[0]
+
 
 def CRTAttack(Ns, e, cs):
     """
@@ -185,6 +244,7 @@ def CRTAttack(Ns, e, cs):
     print(succ)
     return int(m)
 
+
 def CMAAttack(N, es, cs):
     """
     共模攻击。
@@ -202,6 +262,7 @@ def CMAAttack(N, es, cs):
     m = pow(cs[0], u, N) * pow(cs[1], v, N) % N
     return m
 
+
 def MNPAttack(Ns, es, cs):
     """
     模不互素攻击。
@@ -214,10 +275,11 @@ def MNPAttack(Ns, es, cs):
     """
     p = libnum.gcd(*Ns)
     assert p != 1
-    qs = [N//p for N in Ns]
-    ds = [libnum.invmod(e, (p-1)*(q-1)) for e, q in zip(es, qs)]
+    qs = [N // p for N in Ns]
+    ds = [libnum.invmod(e, (p - 1) * (q - 1)) for e, q in zip(es, qs)]
     ms = [pow(c, d, n) for c, d, n in zip(cs, ds, Ns)]
     return ms
+
 
 def WienerAttack(N, e, c):
     """
@@ -227,6 +289,7 @@ def WienerAttack(N, e, c):
     :param c:
     :return: (p,q,k,d)
     """
+
     def continued_fractions_expansion(e, N):
         """
         将e/N展开为连分数。
@@ -280,8 +343,10 @@ def WienerAttack(N, e, c):
         if x1 * x2 == N:
             return [x1, x2, k, d]
 
+
 def CoppersmithAttack():
     pass
+
 
 def read_file(file_name):
     """
@@ -296,11 +361,12 @@ def read_file(file_name):
         c = data[512:768]
         return map(lambda x: (int)(x, base=16), (N, e, c))
 
+
 def classify():
     Ns, es, cs = [], [], []
     for i in range(0, 21):
-        (N, e, c) = read_file('./dataset/data'+str(i))
-        #print(i, N, e, c, sep='\n')
+        (N, e, c) = read_file('./dataset/data' + str(i))
+        # print(i, N, e, c, sep='\n')
         if e > 65537:
             print(i, e)
         Ns.append(N)
@@ -310,6 +376,7 @@ def classify():
         for j in range(0, 21):
             if i != j and libnum.gcd(Ns[i], Ns[j]) != 1:
                 print(f'{i} not prime to {j}\n e is {es[i]}\n{es[j]}\n')
+
 
 if __name__ == '__main__':
     """Ns, cs, es = [], [], []
@@ -335,8 +402,8 @@ if __name__ == '__main__':
     m = pow(c, d, N)
     print(m)"""
     print(b'\xe7\xba\xbf\xe7\xa8\x8b1 \xe6\x94\xb6\xe5\x88\xb0'.decode('utf-8'))
-    #b0 = libnum.s2n(b'\x98vT2\x10\xab\xcd\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-    #b1 = libnum.s2n(b'\x98vT2\x10\xab\xcd\xef\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-    #delta = b1 - b0
-    #print(f'b0: {b0}\n')
-    #print(f'delta: {delta}\n')
+    # b0 = libnum.s2n(b'\x98vT2\x10\xab\xcd\xef\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    # b1 = libnum.s2n(b'\x98vT2\x10\xab\xcd\xef\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    # delta = b1 - b0
+    # print(f'b0: {b0}\n')
+    # print(f'delta: {delta}\n')
