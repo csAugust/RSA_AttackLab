@@ -1,3 +1,6 @@
+# 一个简单的RSA加密和解密器
+# RSA破译部分代码请参见RSAAttackReport.ipynb
+
 from random import randint
 import tkinter as tk
 import gmpy2
@@ -408,9 +411,6 @@ class DecryptFrame:
             self.label_auto.config(text=f'数据库分解成功\nd:{self.decrypter.d}')
         except (ValueError, RuntimeError) as e:
             self.label_hint.config(text=f'发生错误 {e}')
-
-
-
 
 
 class MainPanel:
